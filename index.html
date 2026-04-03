@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dev Roadmap — SLM Auto</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e17;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #1e2d45;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --accent4: #f59e0b;
+    --accent5: #ef4444;
+    --text: #e2e8f0;
+    --text-muted: #64748b;
+    --text-dim: #94a3b8;
+    --done-bg: rgba(16,185,129,0.08);
+    --done-border: rgba(16,185,129,0.3);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 15px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Noise overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Grid lines background */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+
+  /* Header */
+  header {
+    margin-bottom: 48px;
+  }
+
+  .header-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .header-tag::before {
+    content: '';
+    width: 24px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  h1 {
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 700;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #fff 30%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  /* Progress Dashboard */
+  .dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .stat-card.total::before { background: var(--accent); }
+  .stat-card.done::before { background: var(--accent3); }
+  .stat-card.progress::before { background: var(--accent4); }
+  .stat-card.streak::before { background: var(--accent2); }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'Space Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .stat-card.total .stat-value { color: var(--accent); }
+  .stat-card.done .stat-value { color: var(--accent3); }
+  .stat-card.progress .stat-value { color: var(--accent4); }
+  .stat-card.streak .stat-value { color: var(--accent2); }
+
+  /* Master progress bar */
+  .master-progress {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 40px;
+  }
+
+  .mp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .mp-label {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-family: 'Space Mono', monospace;
+  }
+
+  .mp-pct {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+  }
+
+  .bar-track {
+    height: 8px;
+    background: var(--border);
+    border-radius: 100px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 100px;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+    position: relative;
+  }
+
+  .bar-fill::after {
+    content: '';
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 20px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3));
+    border-radius: 100px;
+  }
+
+  /* Phase */
+  .phase {
+    margin-bottom: 32px;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .phase-dot {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .phase-title-group { flex: 1; }
+
+  .phase-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .phase-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: 'Space Mono', monospace;
+    margin-top: 2px;
+  }
+
+  .phase-progress-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 120px;
+  }
+
+  .phase-bar-track {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 100px;
+    overflow: hidden;
+  }
+
+  .phase-bar-fill {
+    height: 100%;
+    border-radius: 100px;
+    transition: width 0.5s ease;
+  }
+
+  .phase-pct {
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    color: var(--text-muted);
+    min-width: 32px;
+    text-align: right;
+  }
+
+  .phase-toggle {
+    font-size: 18px;
+    color: var(--text-muted);
+    transition: transform 0.3s ease;
+    margin-left: 4px;
+  }
+
+  .phase-toggle.collapsed { transform: rotate(-90deg); }
+
+  /* Table */
+  .phase-body {
+    overflow: hidden;
+    transition: all 0.35s ease;
+  }
+
+  .phase-body.collapsed {
+    max-height: 0 !important;
+    opacity: 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  thead th {
+    background: var(--surface2);
+    padding: 10px 14px;
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    text-align: left;
+    font-weight: 400;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+    cursor: pointer;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+  tbody tr.done { background: var(--done-bg); }
+
+  td {
+    padding: 12px 14px;
+    vertical-align: middle;
+  }
+
+  /* Checkbox */
+  .check-wrap {
+    width: 28px;
+  }
+
+  .check-wrap input[type=checkbox] {
+    display: none;
+  }
+
+  .check-box {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .check-box:hover {
+    border-color: var(--accent3);
+    background: rgba(16,185,129,0.08);
+  }
+
+  .check-box.checked {
+    background: var(--accent3);
+    border-color: var(--accent3);
+  }
+
+  .check-box.checked::after {
+    content: '✓';
+    font-size: 12px;
+    color: #000;
+    font-weight: 700;
+  }
+
+  /* Topic */
+  .topic-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .topic-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+
+  tbody tr.done .topic-name {
+    text-decoration: line-through;
+    color: var(--text-muted);
+  }
+
+  /* Tags */
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  /* Level badges */
+  .level {
+    padding: 3px 9px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    white-space: nowrap;
+  }
+
+  .level-basic { background: rgba(0,212,255,0.1); color: var(--accent); border: 1px solid rgba(0,212,255,0.2); }
+  .level-mid { background: rgba(245,158,11,0.1); color: var(--accent4); border: 1px solid rgba(245,158,11,0.2); }
+  .level-adv { background: rgba(124,58,237,0.1); color: var(--accent2); border: 1px solid rgba(124,58,237,0.2); }
+
+  /* YouTube link */
+  .yt-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.2);
+    border-radius: 6px;
+    color: #f87171;
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    text-decoration: none;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .yt-link:hover {
+    background: rgba(239,68,68,0.2);
+    color: #fff;
+  }
+
+  .yt-icon {
+    font-size: 12px;
+  }
+
+  .no-link {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  /* Week badge */
+  .week-badge {
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  /* Reset button */
+  .actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 40px;
+    justify-content: center;
+  }
+
+  .btn {
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: 'Space Mono', monospace;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--accent5);
+    color: var(--accent5);
+  }
+
+  /* Phase color schemes */
+  .p1 .phase-dot { background: rgba(0,212,255,0.15); color: var(--accent); border: 1px solid rgba(0,212,255,0.3); }
+  .p1 .phase-bar-fill { background: var(--accent); }
+  .p1 .phase-header:hover .phase-title { color: var(--accent); }
+
+  .p2 .phase-dot { background: rgba(124,58,237,0.15); color: var(--accent2); border: 1px solid rgba(124,58,237,0.3); }
+  .p2 .phase-bar-fill { background: var(--accent2); }
+  .p2 .phase-header:hover .phase-title { color: var(--accent2); }
+
+  .p3 .phase-dot { background: rgba(16,185,129,0.15); color: var(--accent3); border: 1px solid rgba(16,185,129,0.3); }
+  .p3 .phase-bar-fill { background: var(--accent3); }
+  .p3 .phase-header:hover .phase-title { color: var(--accent3); }
+
+  .p4 .phase-dot { background: rgba(245,158,11,0.15); color: var(--accent4); border: 1px solid rgba(245,158,11,0.3); }
+  .p4 .phase-bar-fill { background: var(--accent4); }
+  .p4 .phase-header:hover .phase-title { color: var(--accent4); }
+
+  .p5 .phase-dot { background: rgba(239,68,68,0.15); color: var(--accent5); border: 1px solid rgba(239,68,68,0.3); }
+  .p5 .phase-bar-fill { background: var(--accent5); }
+  .p5 .phase-header:hover .phase-title { color: var(--accent5); }
+
+  .p6 .phase-dot { background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); }
+  .p6 .phase-bar-fill { background: linear-gradient(90deg, var(--accent2), var(--accent)); }
+  .p6 .phase-header:hover .phase-title { color: #fff; }
+
+  /* Col widths */
+  .col-check { width: 36px; }
+  .col-topic { min-width: 200px; }
+  .col-level { width: 90px; }
+  .col-week  { width: 80px; }
+  .col-yt    { width: 130px; }
+
+  @media (max-width: 640px) {
+    .col-week, .col-level { display: none; }
+    .phase-progress-wrap { display: none; }
+    td, th { padding: 10px 10px; }
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 13px;
+    color: var(--text-dim);
+    font-family: 'Space Mono', monospace;
+    transition: transform 0.3s ease;
+    z-index: 999;
+    white-space: nowrap;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div class="header-tag">SLM Auto · Dev Learning Path</div>
+    <h1>Full-Stack Roadmap</h1>
+    <p class="subtitle">JavaScript → Apps Script → Backend/Frontend · ติ๊กทีละหัวข้อ · บันทึกอัตโนมัติ</p>
+  </header>
+
+  <!-- Dashboard -->
+  <div class="dashboard">
+    <div class="stat-card total">
+      <div class="stat-label">หัวข้อทั้งหมด</div>
+      <div class="stat-value" id="statTotal">0</div>
+    </div>
+    <div class="stat-card done">
+      <div class="stat-label">เรียนแล้ว</div>
+      <div class="stat-value" id="statDone">0</div>
+    </div>
+    <div class="stat-card progress">
+      <div class="stat-label">เหลืออีก</div>
+      <div class="stat-value" id="statLeft">0</div>
+    </div>
+    <div class="stat-card streak">
+      <div class="stat-label">Progress</div>
+      <div class="stat-value" id="statPct">0%</div>
+    </div>
+  </div>
+
+  <div class="master-progress">
+    <div class="mp-header">
+      <span class="mp-label">Overall Progress</span>
+      <span class="mp-pct" id="masterPct">0%</span>
+    </div>
+    <div class="bar-track">
+      <div class="bar-fill" id="masterBar" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Phases will be injected here -->
+  <div id="roadmap"></div>
+
+  <div class="actions">
+    <button class="btn btn-ghost" onclick="resetAll()">↺ Reset ทั้งหมด</button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── Data ────────────────────────────────────────────────────────────────────
+const phases = [
+  {
+    id: 'p1',
+    cls: 'p1',
+    num: '01',
+    title: 'Process & Planning',
+    subtitle: 'วางแผนก่อนสร้างเสมอ',
+    weeks: 'สัปดาห์ 1–2',
+    topics: [
+      { id:'prd', name:'PRD (Product Requirements Doc)', desc:'เอกสารระบุว่าระบบต้องทำอะไร ใครใช้ ทำไมสร้าง', level:'basic', week:'W1', yt:'https://www.youtube.com/watch?v=iFBsECnHrRE', ytLabel:'PRD Guide' },
+      { id:'user-story', name:'User Story', desc:'"ในฐานะ [ใคร] ฉันต้องการ [อะไร] เพื่อ [เป้าหมาย]" — กำหนด scope', level:'basic', week:'W1', yt:'https://www.youtube.com/watch?v=LGeDZmrWwsw', ytLabel:'User Stories' },
+      { id:'wireframe', name:'Wireframe / Mockup', desc:'ร่างหน้าจอก่อน code — ใช้ Figma หรือ draw.io', level:'basic', week:'W1', yt:'https://www.youtube.com/watch?v=qpH7-KFWZRI', ytLabel:'Figma Basics' },
+      { id:'flowchart', name:'Flowchart / Process Map', desc:'แผนผัง logic การทำงานของระบบ ก่อนเขียน code', level:'basic', week:'W2', yt:'https://www.youtube.com/watch?v=SWRDqTx8d4k', ytLabel:'Flowchart' },
+      { id:'erd', name:'ERD (Entity Relationship Diagram)', desc:'ออกแบบความสัมพันธ์ของข้อมูลใน database', level:'mid', week:'W2', yt:'https://www.youtube.com/watch?v=QpdhBUYk7Kk', ytLabel:'ERD Tutorial' },
+      { id:'arch', name:'System Architecture', desc:'ภาพรวม frontend–backend–DB เชื่อมกันยังไง', level:'mid', week:'W2', yt:'https://www.youtube.com/watch?v=i53Gi_K3o7I', ytLabel:'System Design' },
+    ]
+  },
+  {
+    id: 'p2',
+    cls: 'p2',
+    num: '02',
+    title: 'JavaScript Fundamentals',
+    subtitle: 'รากฐานของทุกอย่าง',
+    weeks: 'สัปดาห์ 3–6',
+    topics: [
+      { id:'var', name:'Variables & Data Types', desc:'let, const, string, number, boolean, null, undefined', level:'basic', week:'W3', yt:'https://www.youtube.com/watch?v=hdI2bqOjy3c', ytLabel:'JS Crash Course' },
+      { id:'func', name:'Functions', desc:'function declaration, arrow function =>, parameters, return', level:'basic', week:'W3', yt:'https://www.youtube.com/watch?v=hdI2bqOjy3c', ytLabel:'JS Crash Course' },
+      { id:'cond', name:'Conditionals & Operators', desc:'if/else, switch, ternary, &&, ||', level:'basic', week:'W3', yt:'https://www.youtube.com/watch?v=hdI2bqOjy3c', ytLabel:'JS Crash Course' },
+      { id:'loop', name:'Loops', desc:'for, while, forEach, map, filter, reduce', level:'basic', week:'W4', yt:'https://www.youtube.com/watch?v=s9wW2PpJsmQ', ytLabel:'Loops Tutorial' },
+      { id:'arr', name:'Arrays & Array Methods', desc:'.push(), .pop(), .map(), .filter(), .find(), .sort()', level:'basic', week:'W4', yt:'https://www.youtube.com/playlist?list=PL4cUxeGkcC9haFPT7J25Q9GRB_ZkFrfAI', ytLabel:'Net Ninja JS' },
+      { id:'obj', name:'Objects & JSON', desc:'key-value pairs, JSON.parse(), JSON.stringify()', level:'basic', week:'W4', yt:'https://www.youtube.com/playlist?list=PL4cUxeGkcC9haFPT7J25Q9GRB_ZkFrfAI', ytLabel:'Net Ninja JS' },
+      { id:'dom', name:'DOM Manipulation', desc:'document.querySelector, addEventListener, innerHTML', level:'mid', week:'W5', yt:'https://www.youtube.com/watch?v=5fb2aPlgoys', ytLabel:'DOM Tutorial' },
+      { id:'async', name:'Async / Promises / Fetch', desc:'async/await, fetch API, .then().catch()', level:'mid', week:'W5', yt:'https://www.youtube.com/watch?v=DHvZLI7Db8E', ytLabel:'Async JS' },
+      { id:'es6', name:'ES6+ Modern Syntax', desc:'destructuring, spread ..., template literals `${}`, optional chaining ?.', level:'mid', week:'W6', yt:'https://www.youtube.com/watch?v=NCwa_xi0Uuc', ytLabel:'ES6 Tutorial' },
+      { id:'err', name:'Error Handling', desc:'try/catch/finally, throw new Error(), debugging', level:'mid', week:'W6', yt:'https://www.youtube.com/watch?v=cFTFtuEQ-10', ytLabel:'Error Handling' },
+    ]
+  },
+  {
+    id: 'p3',
+    cls: 'p3',
+    num: '03',
+    title: 'Google Apps Script',
+    subtitle: 'Automate งาน Google Workspace',
+    weeks: 'สัปดาห์ 7–10',
+    topics: [
+      { id:'gas-intro', name:'Apps Script Editor & Setup', desc:'script.google.com, function myFunction(){}, Logger.log()', level:'basic', week:'W7', yt:'https://www.youtube.com/watch?v=Pgv8KxHDI-Y', ytLabel:'GAS Intro' },
+      { id:'gas-sheet', name:'SpreadsheetApp', desc:'getRange(), getValue(), setValue(), getLastRow()', level:'basic', week:'W7', yt:'https://www.youtube.com/playlist?list=PLv9Pf9ykp1dInVdbPKS_tBXv0c4Kf_3DW', ytLabel:'GAS Sheets' },
+      { id:'gas-loop', name:'Loops บน Sheet Data', desc:'วน row, filter ข้อมูล, batch operations', level:'basic', week:'W8', yt:'https://www.youtube.com/playlist?list=PLv9Pf9ykp1dInVdbPKS_tBXv0c4Kf_3DW', ytLabel:'GAS Sheets' },
+      { id:'gas-mail', name:'MailApp / GmailApp', desc:'sendEmail(), ส่งรายงานอัตโนมัติ', level:'basic', week:'W8', yt:'https://www.youtube.com/watch?v=sQKA3UF2Jks', ytLabel:'GAS Email' },
+      { id:'gas-trigger', name:'Triggers (Time-based)', desc:'รัน script ทุกวัน/ชั่วโมง อัตโนมัติ', level:'mid', week:'W9', yt:'https://www.youtube.com/watch?v=sTqYRKWPAEg', ytLabel:'GAS Triggers' },
+      { id:'gas-urlfetch', name:'UrlFetchApp (API calls)', desc:'ดึงข้อมูลจาก external API เข้า Sheet', level:'mid', week:'W9', yt:'https://www.youtube.com/watch?v=4UM3OeX3mOA', ytLabel:'UrlFetchApp' },
+      { id:'gas-ui', name:'Custom Menu & Dialog', desc:'สร้าง menu ใน Sheets, HtmlService', level:'mid', week:'W10', yt:'https://www.youtube.com/watch?v=GJwDEkMJMBM', ytLabel:'GAS UI' },
+      { id:'gas-webapp', name:'Web App (doGet/doPost)', desc:'รับ HTTP request, เชื่อม webhook', level:'adv', week:'W10', yt:'https://www.youtube.com/watch?v=RRQvySxaCW0', ytLabel:'GAS Web App' },
+    ]
+  },
+  {
+    id: 'p4',
+    cls: 'p4',
+    num: '04',
+    title: 'Frontend Development',
+    subtitle: 'หน้าจอที่ user ใช้งาน',
+    weeks: 'สัปดาห์ 11–16',
+    topics: [
+      { id:'html', name:'HTML Structure', desc:'tags, semantic HTML, forms, tables, links', level:'basic', week:'W11', yt:'https://www.youtube.com/watch?v=UB1O30fR-EE', ytLabel:'HTML Crash' },
+      { id:'css', name:'CSS Fundamentals', desc:'selectors, box model, flexbox, grid, responsive', level:'basic', week:'W11', yt:'https://www.youtube.com/watch?v=yfoY53QXEnI', ytLabel:'CSS Crash' },
+      { id:'tailwind', name:'Tailwind CSS', desc:'utility-first CSS — ไม่ต้องเขียน CSS เอง', level:'basic', week:'W12', yt:'https://www.youtube.com/watch?v=UBOj6rqRUME', ytLabel:'Tailwind Crash' },
+      { id:'react-intro', name:'React Basics', desc:'components, JSX, props, useState', level:'mid', week:'W13', yt:'https://www.youtube.com/watch?v=w7ejDZ8SWv8', ytLabel:'React Crash' },
+      { id:'react-hooks', name:'React Hooks', desc:'useState, useEffect, useContext, custom hooks', level:'mid', week:'W14', yt:'https://www.youtube.com/watch?v=TNhaISOUy6Q', ytLabel:'React Hooks' },
+      { id:'react-form', name:'Forms & Validation', desc:'controlled inputs, validation, error messages', level:'mid', week:'W14', yt:'https://www.youtube.com/watch?v=SdzMBWT2CDQ', ytLabel:'React Forms' },
+      { id:'react-api', name:'API Integration (Fetch/Axios)', desc:'ดึงข้อมูลจาก backend มาแสดงใน React', level:'mid', week:'W15', yt:'https://www.youtube.com/watch?v=oykl1Ih9pMg', ytLabel:'React + API' },
+      { id:'react-router', name:'React Router', desc:'นำทางระหว่างหน้า, params, protected routes', level:'mid', week:'W15', yt:'https://www.youtube.com/watch?v=Ul3y1LXxzdU', ytLabel:'React Router' },
+      { id:'responsive', name:'Responsive Design', desc:'mobile-first, breakpoints, media queries', level:'mid', week:'W16', yt:'https://www.youtube.com/watch?v=srvUrASNj0s', ytLabel:'Responsive' },
+    ]
+  },
+  {
+    id: 'p5',
+    cls: 'p5',
+    num: '05',
+    title: 'Backend Development',
+    subtitle: 'ระบบประมวลผล + ฐานข้อมูล',
+    weeks: 'สัปดาห์ 17–22',
+    topics: [
+      { id:'node', name:'Node.js Basics', desc:'runtime JS บน server, npm, package.json', level:'basic', week:'W17', yt:'https://www.youtube.com/watch?v=fBNz5xF-Kx4', ytLabel:'Node Crash' },
+      { id:'express', name:'Express.js (REST API)', desc:'routes, middleware, GET/POST/PUT/DELETE', level:'mid', week:'W17', yt:'https://www.youtube.com/watch?v=L72fhGm1tfE', ytLabel:'Express Crash' },
+      { id:'crud', name:'CRUD Operations', desc:'Create, Read, Update, Delete — พื้นฐานทุกระบบ', level:'mid', week:'W18', yt:'https://www.youtube.com/watch?v=vjf774RKrLc', ytLabel:'CRUD Tutorial' },
+      { id:'sql', name:'SQL & Database Design', desc:'SELECT, JOIN, WHERE, index, normalization', level:'mid', week:'W18', yt:'https://www.youtube.com/watch?v=HXV3zeQKqGY', ytLabel:'SQL Tutorial' },
+      { id:'firebase', name:'Firebase (Realtime + Auth)', desc:'Firestore, Authentication, rules — Google stack ง่ายที่สุด', level:'mid', week:'W19', yt:'https://www.youtube.com/watch?v=9zdvmgGsww0', ytLabel:'Firebase Crash' },
+      { id:'auth', name:'Authentication & JWT', desc:'login/logout, token, session, role-based access', level:'mid', week:'W20', yt:'https://www.youtube.com/watch?v=mbsmsi7l3r4', ytLabel:'JWT Auth' },
+      { id:'env', name:'Environment Variables', desc:'.env file, process.env, ไม่ให้ secret รั่ว', level:'basic', week:'W20', yt:'https://www.youtube.com/watch?v=17UVejOw3zA', ytLabel:'dotenv' },
+      { id:'api-design', name:'REST API Design', desc:'naming conventions, status codes, versioning', level:'mid', week:'W21', yt:'https://www.youtube.com/watch?v=lsMQRaeKNDk', ytLabel:'REST API Design' },
+      { id:'postman', name:'Postman / API Testing', desc:'ทดสอบ API ก่อน connect frontend', level:'basic', week:'W21', yt:'https://www.youtube.com/watch?v=VywxIQ2ZXw4', ytLabel:'Postman Tutorial' },
+    ]
+  },
+  {
+    id: 'p6',
+    cls: 'p6',
+    num: '06',
+    title: 'Integration, Deploy & Security',
+    subtitle: 'เชื่อมระบบ · ขึ้น Production',
+    weeks: 'สัปดาห์ 23–28',
+    topics: [
+      { id:'git', name:'Git & GitHub', desc:'init, commit, push, branch, pull request — version control', level:'basic', week:'W23', yt:'https://www.youtube.com/watch?v=RGOj5yH7evk', ytLabel:'Git Crash' },
+      { id:'deploy-fe', name:'Deploy Frontend (Vercel)', desc:'นำ React ขึ้นอินเทอร์เน็ตฟรี ใน 2 นาที', level:'basic', week:'W23', yt:'https://www.youtube.com/watch?v=ysz5S6PUM-U', ytLabel:'Vercel Deploy' },
+      { id:'deploy-be', name:'Deploy Backend (Railway/Render)', desc:'นำ Node server ขึ้น cloud', level:'mid', week:'W24', yt:'https://www.youtube.com/watch?v=MusIvEKjqsc', ytLabel:'Railway Deploy' },
+      { id:'line-api', name:'Line Messaging API', desc:'ส่งแจ้งเตือน Line OA หาทีมงาน', level:'mid', week:'W24', yt:'https://www.youtube.com/watch?v=P3z3NKKAGSY', ytLabel:'Line API' },
+      { id:'n8n', name:'n8n / Make Automation', desc:'no-code workflow automation — เชื่อมระบบโดยไม่ต้อง code', level:'mid', week:'W25', yt:'https://www.youtube.com/watch?v=1MwSoB0gnM4', ytLabel:'n8n Tutorial' },
+      { id:'webhook', name:'Webhooks', desc:'รับข้อมูล real-time จากระบบอื่น', level:'mid', week:'W25', yt:'https://www.youtube.com/watch?v=41NOoEz3Tzc', ytLabel:'Webhooks' },
+      { id:'role-auth', name:'Role-Based Access Control', desc:'admin/manager/staff — สิทธิ์แต่ละระดับ', level:'adv', week:'W26', yt:'https://www.youtube.com/watch?v=jI4K7L-LI58', ytLabel:'RBAC Tutorial' },
+      { id:'security', name:'Web Security Basics', desc:'HTTPS, CORS, SQL injection, XSS, rate limiting', level:'adv', week:'W26', yt:'https://www.youtube.com/watch?v=F-sFp_AvHc8', ytLabel:'Web Security' },
+      { id:'backup', name:'Backup & Monitoring', desc:'database backup, uptime monitoring, error logging', level:'adv', week:'W27', yt:'https://www.youtube.com/watch?v=rz_W_1rRIGc', ytLabel:'Monitoring' },
+      { id:'ci-cd', name:'CI/CD Pipeline Basics', desc:'auto deploy เมื่อ push code — GitHub Actions', level:'adv', week:'W28', yt:'https://www.youtube.com/watch?v=R8_veQiYBjI', ytLabel:'GitHub Actions' },
+    ]
+  }
+];
+
+// ─── State ────────────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'slm_roadmap_v1';
+
+function loadState() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+  catch { return {}; }
+}
+
+function saveState(state) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+let state = loadState();
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+function render() {
+  const container = document.getElementById('roadmap');
+  container.innerHTML = '';
+
+  phases.forEach(phase => {
+    const phaseEl = document.createElement('div');
+    phaseEl.className = `phase ${phase.cls}`;
+
+    const total = phase.topics.length;
+    const done = phase.topics.filter(t => state[t.id]).length;
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    const collapsed = state[`_collapsed_${phase.id}`] || false;
+
+    phaseEl.innerHTML = `
+      <div class="phase-header" onclick="togglePhase('${phase.id}')">
+        <div class="phase-dot">${phase.num}</div>
+        <div class="phase-title-group">
+          <div class="phase-title">${phase.title}</div>
+          <div class="phase-meta">${phase.subtitle} · ${phase.weeks}</div>
+        </div>
+        <div class="phase-progress-wrap">
+          <div class="phase-bar-track">
+            <div class="phase-bar-fill" style="width:${pct}%"></div>
+          </div>
+          <div class="phase-pct">${done}/${total}</div>
+        </div>
+        <div class="phase-toggle ${collapsed ? 'collapsed' : ''}">▾</div>
+      </div>
+      <div class="phase-body ${collapsed ? 'collapsed' : ''}" style="max-height:${collapsed ? '0' : '2000px'}">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-check"></th>
+              <th class="col-topic">หัวข้อ</th>
+              <th class="col-level">ระดับ</th>
+              <th class="col-week">สัปดาห์</th>
+              <th class="col-yt">YouTube</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${phase.topics.map(t => renderRow(t)).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    container.appendChild(phaseEl);
+  });
+
+  updateStats();
+}
+
+function renderRow(t) {
+  const checked = !!state[t.id];
+  const levelMap = { basic: ['level-basic','พื้นฐาน'], mid: ['level-mid','กลาง'], adv: ['level-adv','สูง'] };
+  const [lvCls, lvLabel] = levelMap[t.level] || ['level-basic','พื้นฐาน'];
+  const ytBtn = t.yt
+    ? `<a class="yt-link" href="${t.yt}" target="_blank" rel="noopener"><span class="yt-icon">▶</span>${t.ytLabel}</a>`
+    : `<span class="no-link">—</span>`;
+
+  return `
+    <tr class="${checked ? 'done' : ''}" onclick="toggle('${t.id}', event)">
+      <td class="col-check check-wrap">
+        <div class="check-box ${checked ? 'checked' : ''}"></div>
+      </td>
+      <td class="col-topic">
+        <div class="topic-name">${t.name}</div>
+        <div class="topic-desc">${t.desc}</div>
+      </td>
+      <td class="col-level"><span class="level ${lvCls}">${lvLabel}</span></td>
+      <td class="col-week"><span class="week-badge">${t.week}</span></td>
+      <td class="col-yt">${ytBtn}</td>
+    </tr>
+  `;
+}
+
+// ─── Interactions ─────────────────────────────────────────────────────────────
+function toggle(id, event) {
+  // Don't toggle if clicking the YouTube link
+  if (event.target.closest('a')) return;
+
+  state[id] = !state[id];
+  saveState(state);
+  render();
+
+  const topic = phases.flatMap(p => p.topics).find(t => t.id === id);
+  if (state[id] && topic) showToast(`✓ เรียน "${topic.name}" แล้ว!`);
+}
+
+function togglePhase(phaseId) {
+  const key = `_collapsed_${phaseId}`;
+  state[key] = !state[key];
+  saveState(state);
+  render();
+}
+
+function updateStats() {
+  const allTopics = phases.flatMap(p => p.topics);
+  const total = allTopics.length;
+  const done = allTopics.filter(t => state[t.id]).length;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statDone').textContent = done;
+  document.getElementById('statLeft').textContent = total - done;
+  document.getElementById('statPct').textContent = pct + '%';
+  document.getElementById('masterPct').textContent = pct + '%';
+  document.getElementById('masterBar').style.width = pct + '%';
+}
+
+function resetAll() {
+  if (!confirm('ล้างความคืบหน้าทั้งหมด?')) return;
+  state = {};
+  saveState(state);
+  render();
+  showToast('↺ Reset เรียบร้อย');
+}
+
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
